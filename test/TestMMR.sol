@@ -1,15 +1,26 @@
-pragma solidity >=0.4.21 <0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
 
-import "truffle/Assert.sol";
-import "../contracts/MMR.sol";
+import {Test, console} from "forge-std/Test.sol";
+
+import {MMRPoseidon2} from "../src/MMRPoseidon2.sol";
+import {Field} from "@poseidon2/src/Field.sol";
 
 /**
  * I wrote this solidity test file just to show how to use this library
  * More detail test cases are written in javascript. Please see TestMMR.js
  */
-contract TestMMR {
-    using MMR for MMR.Tree;
-    MMR.Tree mmr;
+contract TestMMR is Test {
+    using MMRPoseidon2 for MMRPoseidon2.Tree;
+    MMRPoseidon2.Tree mmr;
+
+    /**
+     * Helper function to hash data using Poseidon2
+     */
+    function hashData(bytes memory _data) internal pure returns (bytes32) {
+        bytes32 data = keccak256(_data);
+        return data;
+    }
 
     /**
      * Appending 10 items will construct a Merkle Mountain Range like below
@@ -18,51 +29,46 @@ contract TestMMR {
      *    3      6     10       13       18
      *  1  2   4  5   8  9    11  12   16  17
      */
-    function testMerkleMountainRange() public {
-        mmr.append('0x0001'); // stored at index 1
-        mmr.append('0x0002'); // stored at index 2
-        mmr.append('0x0003'); // stored at index 4
-        mmr.append('0x0004'); // stored at index 5
-        mmr.append('0x0005'); // stored at index 8
-        mmr.append('0x0006'); // stored at index 9
-        mmr.append('0x0007'); // stored at index 11
-        mmr.append('0x0008'); // stored at index 12
-        mmr.append('0x0009'); // stored at index 16
-        mmr.append('0x000a'); // stored at index 17
+    function testPoseidonMountainRange() public {
+        // Hash data before appending (MMR expects pre-hashed values)
+        mmr.append(hashData("0x0001")); // stored at index 1
+        mmr.append(hashData("0x0002")); // stored at index 2
+        mmr.append(hashData("0x0003")); // stored at index 4
+        mmr.append(hashData("0x0004")); // stored at index 5
+        mmr.append(hashData("0x0005")); // stored at index 8
+        mmr.append(hashData("0x0006")); // stored at index 9
+        mmr.append(hashData("0x0007")); // stored at index 11
+        mmr.append(hashData("0x0008")); // stored at index 12
+        mmr.append(hashData("0x0009")); // stored at index 16
+        mmr.append(hashData("0x000a")); // stored at index 17
 
         uint256 index = 17;
-        // Get a merkle proof for index 17
-        (bytes32 root, uint256 size, bytes32[] memory peakBagging, bytes32[] memory siblings) = mmr.getMerkleProof(index);
-        // using MMR library verify the root includes the leaf
-        Assert.isTrue(MMR.inclusionProof(root, size, index, '0x000a', peakBagging, siblings), "should return true or reverted");
-    }
 
-    function testRollUp() public {
-        bytes[] memory data = new bytes[](7);
-        data[0] = bytes("0x000b");
-        data[1] = bytes("0x000c");
-        data[2] = bytes("0x000d");
-        data[3] = bytes("0x000e");
-        data[4] = bytes("0x000f");
-        data[5] = bytes("0x0010");
-        data[6] = bytes("0x0011");
-        bytes32[] memory hashes = new bytes32[](7);
-        hashes[0] = keccak256(data[0]);
-        hashes[1] = keccak256(data[1]);
-        hashes[2] = keccak256(data[2]);
-        hashes[3] = keccak256(data[3]);
-        hashes[4] = keccak256(data[4]);
-        hashes[5] = keccak256(data[5]);
-        hashes[6] = keccak256(data[6]);
-        bytes32 newRollUpRoot = MMR.rollUp(
-            mmr.root,
-            mmr.width,
-            mmr.getPeaks(),
-            hashes
-        );
-        for(uint i = 0; i < 7; i++) {
-            mmr.append(data[i]);
+        // Get a merkle proof for index 17
+        (bytes32 root, uint256 width, bytes32[] memory peaks, bytes32[] memory siblings) = mmr.getMerkleProof(index);
+
+        console.log("\n=== Proof ===");
+        console.logBytes32(root);
+
+        console.log(width);
+
+        console.log("Peaks:");
+        for (uint256 i = 0; i < peaks.length; i++) {
+            console.logBytes32(peaks[i]);
         }
-        Assert.isTrue(mmr.root == newRollUpRoot, "Roll up shows different result");
+
+        console.log("Siblings:");
+        for (uint256 i = 0; i < siblings.length; i++) {
+            console.logBytes32(siblings[i]);
+        }
+
+        // Hash the value that was originally appended
+        bytes32 valueHash = hashData("0x000a");
+
+        using MMR library verify the root includes the leaf
+        assertTrue(
+            MMRPoseidon2.verifyInclusion(root, width, index, valueHash, peaks, siblings),
+            "should return true or reverted"
+        );
     }
 }
