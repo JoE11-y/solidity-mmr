@@ -10,7 +10,7 @@ import {Field} from "@poseidon2/src/Field.sol";
  * I wrote this solidity test file just to show how to use this library
  * More detail test cases are written in javascript. Please see TestMMR.js
  */
-contract TestMMR is Test {
+contract TestMMRPoseidon is Test {
     using MMRPoseidon2 for MMRPoseidon2.Tree;
     MMRPoseidon2.Tree mmr;
 
