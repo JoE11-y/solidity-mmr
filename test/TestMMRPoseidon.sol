@@ -65,7 +65,7 @@ contract TestMMRPoseidon is Test {
         // Hash the value that was originally appended
         bytes32 valueHash = hashData("0x000a");
 
-        using MMR library verify the root includes the leaf
+        // using MMR library verify the root includes the leaf
         assertTrue(
             MMRPoseidon2.verifyInclusion(root, width, index, valueHash, peaks, siblings),
             "should return true or reverted"

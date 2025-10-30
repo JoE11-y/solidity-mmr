@@ -33,10 +33,12 @@ contract TestMMR is Test {
         mmr.append("0x000a"); // stored at index 17
 
         uint256 index = 17;
+
         // Get a merkle proof for index 17
         (bytes32 root, uint256 size, bytes32[] memory peakBagging, bytes32[] memory siblings) =
             mmr.getMerkleProof(index);
-        // using MMR library verify the root includes the leaf
+
+        // Using MMR library verify the root includes the leaf
         assertTrue(
             MMR.inclusionProof(root, size, index, "0x000a", peakBagging, siblings), "should return true or reverted"
         );
