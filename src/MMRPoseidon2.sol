@@ -16,7 +16,7 @@ library MMRPoseidon2 {
         mapping(uint256 => bytes32) hashes; // nodeIndex => nodeHash
     }
 
-    // ========= PUBLIC / EXTERNAL-FACING LOGIC =========
+    // ========= internal / EXTERNAL-FACING LOGIC =========
 
     /**
      * @notice Append a new leaf.
@@ -27,7 +27,7 @@ library MMRPoseidon2 {
      *  - updates width, size, root
      *  - writes new leaf hash and any internal branch hashes
      */
-    function append(Tree storage tree, bytes32 dataHash) public returns (uint256 newLeafIndex) {
+    function append(Tree storage tree, bytes32 dataHash) internal returns (uint256 newLeafIndex) {
         // fit into Poseidon2 field
         bytes32 dataHashMod = _fieldMod(dataHash);
 
@@ -69,7 +69,7 @@ library MMRPoseidon2 {
     /**
      * @notice Return current width (#leaves).
      */
-    function getWidth(Tree storage tree) public view returns (uint256) {
+    function getWidth(Tree storage tree) internal view returns (uint256) {
         return tree.width;
     }
 
@@ -122,7 +122,7 @@ library MMRPoseidon2 {
      *  - siblings: sibling path from leaf → peak
      */
     function getMerkleProof(Tree storage tree, uint256 index)
-        public
+        internal
         view
         returns (bytes32 root_, uint256 width_, bytes32[] memory peakBag, bytes32[] memory siblings)
     {
@@ -168,9 +168,9 @@ library MMRPoseidon2 {
         uint256 width_,
         uint256 index,
         bytes32 valueHash,
-        bytes32[] calldata peakBag,
-        bytes32[] calldata siblings
-    ) public pure returns (bool) {
+        bytes32[] memory peakBag,
+        bytes32[] memory siblings
+    ) internal pure returns (bool) {
         require(_calcSize(width_) >= index, "MMR:IndexOOB");
 
         // root must equal bagged peak hash
